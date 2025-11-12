@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { Post } from '../types';
-import { Repeat, MessageCircle, Heart, BarChart2 } from 'lucide-react';
+import { Repeat, MessageCircle, Heart, BarChart2, Copy, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
 
 interface PostPreviewProps {
@@ -9,7 +9,8 @@ interface PostPreviewProps {
 }
 
 const PostPreview: React.FC<PostPreviewProps> = ({ post }) => {
-    
+    const [copiedState, setCopiedState] = useState<'none' | 'thread' | number>('none');
+
     const highlightHashtagsAndMentions = (text: string) => {
         const parts = text.split(/([#@]\w+)/g);
         return parts.map((part, i) => {
@@ -20,9 +21,49 @@ const PostPreview: React.FC<PostPreviewProps> = ({ post }) => {
         });
     };
     
+    const handleCopy = (text: string, type: 'thread' | number) => {
+        if (copiedState !== 'none') return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            setCopiedState(type);
+            setTimeout(() => setCopiedState('none'), 2000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            alert('Failed to copy text to clipboard.');
+        });
+    };
+
+    const handleCopyThread = () => {
+        const fullText = post.content.map(c => c.text).join('\n\n');
+        handleCopy(fullText, 'thread');
+    };
+
+    const handleCopySingle = (text: string, index: number) => {
+        handleCopy(text, index);
+    };
+    
     return (
         <GlassCard className="p-6">
-            <h2 className="text-xl font-bold mb-4">Live Preview</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Live Preview</h2>
+                <button
+                    onClick={handleCopyThread}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold bg-gray-500/20 dark:bg-white/10 rounded-lg hover:bg-gray-500/30 dark:hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-wait"
+                    disabled={copiedState !== 'none'}
+                >
+                    {copiedState === 'thread' ? (
+                        <>
+                            <Check size={16} className="text-green-400" />
+                            Copied!
+                        </>
+                    ) : (
+                        <>
+                            <Copy size={16} />
+                            Copy Thread
+                        </>
+                    )}
+                </button>
+            </div>
             <div className="bg-gray-100/30 dark:bg-gray-800/50 p-4 rounded-lg">
                 {post.content.map((item, index) => (
                     <div key={index} className={`flex items-start gap-3 ${index > 0 ? 'mt-3' : ''}`}>
@@ -31,14 +72,22 @@ const PostPreview: React.FC<PostPreviewProps> = ({ post }) => {
                             <img src={`https://picsum.photos/seed/${index+1}/48/48`} alt="Avatar" className="w-10 h-10 rounded-full" />
                             {index < post.content.length - 1 && <div className="absolute left-1/2 -translate-x-1/2 top-10 h-full border-l-2 border-gray-300 dark:border-gray-600"></div>}
                         </div>
-                        <div className="w-full">
+                        <div className="w-full relative">
                             <div className="flex items-center gap-2">
                                 <span className="font-bold">you.eth</span>
                                 <span className="text-gray-500 dark:text-gray-400 text-sm">@you</span>
                                 <span className="text-gray-500 dark:text-gray-400 text-sm">· now</span>
                             </div>
+                             <button 
+                                onClick={() => handleCopySingle(item.text, index)}
+                                disabled={copiedState !== 'none'}
+                                className="absolute top-0 right-0 p-1 rounded-full text-gray-500 hover:bg-gray-500/20 hover:text-gray-200 transition-colors disabled:opacity-50"
+                                aria-label="Copy post text"
+                            >
+                                {copiedState === index ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                            </button>
                             {item.text && (
-                                <p className="whitespace-pre-wrap break-words">{highlightHashtagsAndMentions(item.text)}</p>
+                                <p className="whitespace-pre-wrap break-words pr-8">{highlightHashtagsAndMentions(item.text)}</p>
                             )}
                             {!item.text && !item.image && (
                                 <p className="text-gray-500">Your post will appear here...</p>

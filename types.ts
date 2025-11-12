@@ -1,5 +1,5 @@
 export type Status = 'Idea' | 'Perfect' | 'Ready to Post';
-export type Tone = 'Educator' | 'Influencer' | 'Did You Know?' | 'Humorous' | 'Inspirational' | 'News Reporter' | 'Technical Explainer';
+export type Tone = string;
 
 export interface PostContent {
     text: string;
@@ -13,4 +13,16 @@ export interface Post {
     tones: Tone[];
     createdAt: string;
     scheduledAt?: string | null;
+}
+
+export interface ScoreMetric {
+  score: number;
+  rationale: string;
+}
+
+export interface PostScore {
+  engagement: ScoreMetric;
+  clarity: ScoreMetric;
+  toneAlignment: ScoreMetric;
+  overall: ScoreMetric;
 }

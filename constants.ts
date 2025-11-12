@@ -1,11 +1,11 @@
 
-import type { Status, Tone } from './types';
+import type { Status } from './types';
 
 export const X_CHAR_LIMIT = 280;
 
 export const STATUSES: Status[] = ['Idea', 'Perfect', 'Ready to Post'];
 
-export const TONES: Tone[] = [
+export const TONES: string[] = [
     'Educator',
     'Influencer',
     'Did You Know?',
@@ -30,7 +30,7 @@ export const READINESS_CONFIG: Record<Status, { color: string; description: stri
     }
 };
 
-export const TONE_COLORS: Record<Tone, string> = {
+export const TONE_COLORS: Record<string, string> = {
     'Educator': 'bg-sky-500/80',
     'Influencer': 'bg-pink-500/80',
     'Did You Know?': 'bg-amber-500/80',
