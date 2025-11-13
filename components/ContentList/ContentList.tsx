@@ -1,63 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { Post, Status } from '../../types';
 import { STATUSES, READINESS_CONFIG } from '../../constants';
-import { Edit, Trash2, Clock } from 'lucide-react';
 import GlassCard from '../Common/GlassCard';
-
-const calculateTimeLeft = (scheduleDate?: string | null) => {
-    if (!scheduleDate) return null;
-    const difference = +new Date(scheduleDate) - +new Date();
-    if (difference <= 0) return { expired: true };
-
-    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((difference / 1000 / 60) % 60);
-    const seconds = Math.floor((difference / 1000) % 60);
-
-    return { days, hours, minutes, seconds, expired: false };
-};
-
-const PostListItem: React.FC<{ post: Post; currentPostId?: string; onEdit: (id: string) => void; onDelete: (id: string) => void;}> = ({ post, currentPostId, onEdit, onDelete }) => {
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(post.scheduledAt));
-
-    useEffect(() => {
-        if (!post.scheduledAt || timeLeft?.expired) return;
-        const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft(post.scheduledAt));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [post.scheduledAt, timeLeft?.expired]);
-
-    const renderTimeInfo = () => {
-        if (post.scheduledAt) {
-            if (timeLeft?.expired) {
-                return <span className="text-xs text-yellow-400 flex items-center gap-1"><Clock size={12}/> Schedule Passed</span>;
-            }
-            if (timeLeft) {
-                const { days, hours, minutes, seconds } = timeLeft;
-                return <span className="text-xs text-cyan-300 font-mono flex items-center gap-1"><Clock size={12} />{days > 0 && `${days}d `}{`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}</span>;
-            }
-        }
-        return <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</span>;
-    };
-
-    return (
-        <div className={`p-3 rounded-lg transition-all duration-300 flex justify-between items-start ${currentPostId === post.id ? 'bg-purple-500/30' : 'bg-black/10 dark:bg-white/5 hover:bg-black/20 dark:hover:bg-white/10'}`}>
-            <div className="flex-1 overflow-hidden">
-                <p className="truncate font-medium">{post.content[0]?.text || "Untitled Post"}</p>
-                <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${READINESS_CONFIG[post.status].color}`}>{post.status}</span>
-                    {renderTimeInfo()}
-                </div>
-            </div>
-            <div className="flex items-center gap-1 ml-2">
-                <button onClick={() => onEdit(post.id)} className="p-2 rounded-full hover:bg-white/20 text-blue-400"><Edit size={16} /></button>
-                <button onClick={() => onDelete(post.id)} className="p-2 rounded-full hover:bg-white/20 text-red-400"><Trash2 size={16} /></button>
-            </div>
-        </div>
-    );
-};
-const MemoizedPostListItem = React.memo(PostListItem);
+import PostListItem from './PostListItem';
 
 interface ContentListProps {
     posts: Post[];
@@ -72,13 +17,44 @@ const ContentList: React.FC<ContentListProps> = ({ posts, onEdit, onDelete, filt
     return (
         <GlassCard className="p-6">
             <h2 className="text-xl font-bold mb-4">Your Content</h2>
+            
+            {/* Filter Buttons */}
             <div className="flex flex-wrap gap-2 mb-4 border-b border-white/20 dark:border-white/10 pb-4">
-                <button onClick={() => setFilter('All')} className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${filter === 'All' ? 'bg-purple-500/30 text-purple-300 border-purple-500/40' : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'}`}>All</button>
-                {STATUSES.map(status => (<button key={status} onClick={() => setFilter(status)} className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${filter === status ? `${READINESS_CONFIG[status].color} border-opacity-100` : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'}`}>{status}</button>))}
+                <button
+                    onClick={() => setFilter('All')}
+                    className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${
+                        filter === 'All'
+                            ? 'bg-purple-500/30 text-purple-300 border-purple-500/40'
+                            : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'
+                    }`}
+                >
+                    All
+                </button>
+                {STATUSES.map(status => (
+                    <button
+                        key={status}
+                        onClick={() => setFilter(status)}
+                        className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${
+                            filter === status
+                                ? `${READINESS_CONFIG[status].color} border-opacity-100`
+                                : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'
+                        }`}
+                    >
+                        {status}
+                    </button>
+                ))}
             </div>
+
+            {/* Posts List */}
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {posts.length > 0 ? posts.map(post => (
-                    <MemoizedPostListItem key={post.id} post={post} currentPostId={currentPostId} onEdit={onEdit} onDelete={onDelete} />
+                    <PostListItem 
+                        key={post.id}
+                        post={post}
+                        currentPostId={currentPostId}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                    />
                 )) : (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                         <p>No posts match your filter.</p>
