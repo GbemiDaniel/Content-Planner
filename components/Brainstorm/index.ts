@@ -1,1 +1,1 @@
-export * from './Brainstormer';
+export { default } from './Brainstormer';

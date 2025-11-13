@@ -5,10 +5,10 @@ const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
   // This is a fallback for development, in a real environment this check is not needed.
-  console.warn("API_KEY environment variable is not set.");
+  console.warn("API_KEY environment variable is not set. The app may not function correctly.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 
 export async function checkReadiness(content: string[], tones: string[]): Promise<string> {

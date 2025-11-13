@@ -1,7 +1,8 @@
 import React from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, CheckCircle, X } from 'lucide-react';
 import { AppProvider, useAppContext } from './contexts';
-import { Dashboard } from './components/Dashboard';
+import Dashboard from './components/Dashboard/Dashboard';
+import GlassCard from './components/Common/GlassCard';
 
 const Header: React.FC = () => {
     const { isDarkMode, toggleTheme } = useAppContext();
@@ -24,6 +25,28 @@ const Header: React.FC = () => {
     );
 };
 
+const SuccessNotification: React.FC = () => {
+    const { successNotification, dismissSuccessNotification } = useAppContext();
+
+    if (!successNotification) {
+        return null;
+    }
+
+    return (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-slide-in-bottom w-max max-w-[90vw]">
+            <GlassCard className="!p-0">
+                <div className="flex items-center gap-3 pl-4 pr-2 py-3 bg-green-500/20 text-green-300">
+                    <CheckCircle size={20} />
+                    <p className="font-medium text-sm">{successNotification.message}</p>
+                    <button onClick={dismissSuccessNotification} className="p-1 rounded-full hover:bg-white/10 ml-2">
+                        <X size={16} />
+                    </button>
+                </div>
+            </GlassCard>
+        </div>
+    );
+};
+
 
 const AppContent: React.FC = () => {
     return (
@@ -33,6 +56,7 @@ const AppContent: React.FC = () => {
             <main className="pt-20 p-4 md:p-8">
                 <Dashboard />
             </main>
+            <SuccessNotification />
         </div>
     );
 }

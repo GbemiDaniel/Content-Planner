@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import type { Post } from '../types';
+import type { Post, Status } from '../types';
 import { useTheme, usePosts } from '../hooks';
 
 type View = 'dashboard' | 'editor' | 'brainstorm' | 'analyzer';
+
+interface SuccessNotification {
+  id: number;
+  message: string;
+}
 
 interface AppContextType {
     // Theme
@@ -10,11 +15,9 @@ interface AppContextType {
     toggleTheme: () => void;
     // Posts
     posts: Post[];
-    addPost: (post: Post) => void;
-    updatePost: (post: Post) => void;
     deletePost: (id: string) => void;
-    filter: string;
-    setFilter: (filter: any) => void;
+    filter: Status | 'All';
+    setFilter: (filter: Status | 'All') => void;
     filteredPosts: Post[];
     // Current State
     currentPost: Post | null;
@@ -27,15 +30,13 @@ interface AppContextType {
     handleSavePost: (post: Post) => void;
     handleCancel: () => void;
     handleUseIdea: (idea: string) => void;
+    // Notifications
+    successNotification: SuccessNotification | null;
     showSuccessNotification: (message: string) => void;
+    dismissSuccessNotification: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-interface SuccessNotification {
-  id: number;
-  message: string;
-}
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { isDarkMode, toggleTheme } = useTheme();
@@ -51,6 +52,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTimeout(() => {
             setSuccessNotification(current => (current?.id === id ? null : current));
         }, 3000);
+    }, []);
+    
+    const dismissSuccessNotification = useCallback(() => {
+        setSuccessNotification(null);
     }, []);
 
     const handleNewPost = useCallback(() => {
@@ -74,15 +79,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, [posts]);
 
     const handleSavePost = useCallback((postToSave: Post) => {
-        const existingIndex = posts.findIndex(p => p.id === postToSave.id);
-        if (existingIndex > -1) {
-            updatePost(postToSave);
-        } else {
+        if (postToSave.id.startsWith('new-')) {
             addPost(postToSave);
+            showSuccessNotification("Post created successfully!");
+        } else {
+            updatePost(postToSave);
+            showSuccessNotification("Post updated successfully!");
         }
         setCurrentPost(null);
         setView('dashboard');
-    }, [posts, addPost, updatePost]);
+    }, [addPost, updatePost, showSuccessNotification]);
     
     const handleDeletePost = useCallback((id: string) => {
         deletePost(id);
@@ -114,8 +120,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isDarkMode,
         toggleTheme,
         posts,
-        addPost,
-        updatePost,
         deletePost: handleDeletePost,
         filter,
         setFilter,
@@ -129,16 +133,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         handleSavePost,
         handleCancel,
         handleUseIdea,
+        successNotification,
         showSuccessNotification,
+        dismissSuccessNotification,
     }), [
-        isDarkMode, toggleTheme, posts, addPost, updatePost, handleDeletePost, filter, setFilter, filteredPosts,
-        currentPost, view, handleNewPost, handleEditPost, handleSavePost, handleCancel, handleUseIdea, showSuccessNotification
+        isDarkMode, toggleTheme, posts, handleDeletePost, filter, setFilter, filteredPosts,
+        currentPost, view, handleNewPost, handleEditPost, handleSavePost, handleCancel, handleUseIdea, 
+        successNotification, showSuccessNotification, dismissSuccessNotification
     ]);
 
     return (
         <AppContext.Provider value={value}>
             {children}
-            {/* You can move the global success notification here */}
         </AppContext.Provider>
     );
 };

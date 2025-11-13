@@ -1,12 +1,13 @@
 import React from 'react';
 import { Plus, BrainCircuit, FileSearch } from 'lucide-react';
 import { useAppContext } from '../../contexts';
+import GlassCard from '../Common/GlassCard';
 
 const Welcome: React.FC = () => {
     const { handleNewPost, setView } = useAppContext();
 
     return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
+        <GlassCard className="flex flex-col items-center justify-center h-full min-h-[400px]">
             <div className="text-center p-8">
                 <h2 className="text-2xl font-bold mb-2">Welcome to your workspace</h2>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Start by creating a post or brainstorming new ideas.</p>
@@ -31,7 +32,7 @@ const Welcome: React.FC = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </GlassCard>
     );
 };
 

@@ -1,1 +1,1 @@
-export * from './PostAnalyzer';
+export { default } from './PostAnalyzer';

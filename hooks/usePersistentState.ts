@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
  * @param defaultValue The default value to use if nothing is in localStorage.
  * @returns A state and a setter function, similar to useState.
  */
-export function usePersistentState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+// Fix: Update signature to allow a function for lazy initialization of the default value, resolving a type error in useTheme.ts.
+export function usePersistentState<T>(key: string, defaultValue: T | (() => T)): [T, React.Dispatch<React.SetStateAction<T>>] {
     const [state, setState] = useState<T>(() => {
         try {
             const storedValue = localStorage.getItem(key);
@@ -15,6 +16,10 @@ export function usePersistentState<T>(key: string, defaultValue: T): [T, React.D
             }
         } catch (error) {
             console.error(`Error reading localStorage key "${key}":`, error);
+        }
+        
+        if (typeof defaultValue === 'function') {
+            return (defaultValue as () => T)();
         }
         return defaultValue;
     });

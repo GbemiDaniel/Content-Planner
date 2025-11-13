@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Post, Status } from '../types';
 import { usePersistentState } from './usePersistentState';
 
@@ -16,12 +16,7 @@ export function usePosts() {
 
     const updatePost = (postToUpdate: Post) => {
         setPosts(prevPosts => {
-            const newPosts = [...prevPosts];
-            const existingIndex = newPosts.findIndex(p => p.id === postToUpdate.id);
-            if (existingIndex > -1) {
-                newPosts[existingIndex] = { ...postToUpdate, id: postToUpdate.id.startsWith('new-') ? Date.now().toString() : postToUpdate.id };
-            }
-            return newPosts;
+            return prevPosts.map(p => p.id === postToUpdate.id ? postToUpdate : p);
         });
     };
 
@@ -31,7 +26,13 @@ export function usePosts() {
         }
     };
 
-    const filteredPosts = filter === 'All' ? posts : posts.filter(p => p.status === filter);
+    const filteredPosts = useMemo(() => {
+        if (filter === 'All') {
+            return posts;
+        }
+        return posts.filter(p => p.status === filter);
+    }, [posts, filter]);
+
 
     return {
         posts,

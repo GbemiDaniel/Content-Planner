@@ -10,7 +10,6 @@ export const highlightHashtagsAndMentionsInJSX = (text: string) => {
     const parts = text.split(/([#@]\w+)/g);
     return parts.map((part, i) => {
         if (part.match(/([#@]\w+)/)) {
-            // FIX: Replaced JSX with React.createElement to be compatible with .ts files.
             return React.createElement('span', { key: i, className: "text-blue-400" }, part);
         }
         return part;

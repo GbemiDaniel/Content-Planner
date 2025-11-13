@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { BrainCircuit, X, Wand2, Sparkles, Lightbulb } from 'lucide-react';
-import { GlassCard } from '../Common';
+import GlassCard from '../Common/GlassCard';
 import { brainstormIdeas } from '../../api';
 import { useAppContext } from '../../contexts';
 import { highlightHashtagsAndMentionsInJSX } from '../../utils';
 
-export const Brainstormer: React.FC = () => {
+const Brainstormer: React.FC = () => {
     const { handleUseIdea, setView } = useAppContext();
     const [topic, setTopic] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -74,3 +74,5 @@ export const Brainstormer: React.FC = () => {
         </GlassCard>
     );
 };
+
+export default Brainstormer;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { Post, Status, Tone, PostScore } from '../../types';
 import { X_CHAR_LIMIT, STATUSES, TONES, TONE_COLORS, READINESS_CONFIG } from '../../constants';
 import { Plus, Trash2, BrainCircuit, X, Save, ImagePlus, Hash, Wand2, LoaderCircle, Star, Sparkles } from 'lucide-react';
-import { GlassCard } from '../Common';
+import GlassCard from '../Common/GlassCard';
 import { rephrasePost, formatPost, checkReadiness, suggestHashtags, scorePost } from '../../api';
 import { useAppContext } from '../../contexts';
 import { formatDateTimeForInput } from '../../utils';
@@ -12,7 +12,7 @@ import { formatDateTimeForInput } from '../../utils';
 const HashtagSuggestionsDisplay: React.FC<{
     text: string;
     onHashtagClick: (tag: string) => void;
-}> = ({ text, onHashtagClick }) => {
+}> = React.memo(({ text, onHashtagClick }) => {
     const lines = text.split('\n').filter(line => line.trim() !== '');
 
     return (
@@ -43,9 +43,9 @@ const HashtagSuggestionsDisplay: React.FC<{
             })}
         </div>
     );
-};
+});
 
-const ScoreCircle: React.FC<{ score: number, size?: 'sm' | 'lg' }> = ({ score, size = 'sm' }) => {
+const ScoreCircle: React.FC<{ score: number, size?: 'sm' | 'lg' }> = React.memo(({ score, size = 'sm' }) => {
   const isLarge = size === 'lg';
   const radius = isLarge ? 36 : 24;
   const strokeWidth = isLarge ? 8 : 6;
@@ -77,9 +77,9 @@ const ScoreCircle: React.FC<{ score: number, size?: 'sm' | 'lg' }> = ({ score, s
       <span className={`absolute inset-0 flex items-center justify-center font-bold ${isLarge ? 'text-3xl' : 'text-lg'}`}>{score}</span>
     </div>
   );
-};
+});
 
-const ScoreDisplay: React.FC<{ score: PostScore }> = ({ score }) => {
+const ScoreDisplay: React.FC<{ score: PostScore }> = React.memo(({ score }) => {
     const metrics = [
         { name: 'Engagement', data: score.engagement },
         { name: 'Clarity', data: score.clarity },
@@ -103,17 +103,18 @@ const ScoreDisplay: React.FC<{ score: PostScore }> = ({ score }) => {
             </div>
         </div>
     )
-}
+});
 
 
-export const ContentCreator: React.FC = () => {
+const ContentCreator: React.FC = () => {
     const { currentPost, handleSavePost, handleCancel, showSuccessNotification, setCurrentPost: setGlobalPost } = useAppContext();
 
+    // Local state for the editor, derived from global state
     const [post, setPost] = useState<Post | null>(currentPost);
     const [activeContentIndex, setActiveContentIndex] = useState(0);
     const [customTone, setCustomTone] = useState('');
 
-    // AI related state
+    // AI-related state is kept local to this component
     const [error, setError] = useState<string | null>(null);
     const [aiFeedback, setAiFeedback] = useState<string | null>(null);
     const [isCheckingReadiness, setIsCheckingReadiness] = useState(false);
@@ -136,26 +137,26 @@ export const ContentCreator: React.FC = () => {
         setPostScore(null);
     }, [currentPost]);
     
-    // Sync local post state with global state for preview
+    // Sync local post state with global state for the live preview
     useEffect(() => {
         if(post) {
             setGlobalPost(post);
         }
     }, [post, setGlobalPost]);
 
-    const updatePostState = <K extends keyof Post>(key: K, value: Post[K]) => {
+    const updatePostState = useCallback(<K extends keyof Post>(key: K, value: Post[K]) => {
         setPost(prev => prev ? { ...prev, [key]: value } : null);
-    };
+    }, []);
     
-    const updateContentText = (index: number, text: string) => {
+    const updateContentText = useCallback((index: number, text: string) => {
         if (!post) return;
         const newContent = post.content.map((item, i) =>
             i === index ? { ...item, text } : item
         );
         updatePostState('content', newContent);
-    };
+    }, [post, updatePostState]);
     
-    const handleRephrase = async (index: number) => {
+    const handleRephrase = useCallback(async (index: number) => {
         if (!post || rephrasingIndex !== null || formattingIndex !== null) return;
         const originalText = post.content[index].text;
         if (!originalText.trim()) {
@@ -170,9 +171,9 @@ export const ContentCreator: React.FC = () => {
             showSuccessNotification(`Post #${index + 1} rephrased!`);
         } catch (e: any) { setError(`AI rephrase failed: ${e.message}`); } 
         finally { setRephrasingIndex(null); }
-    };
+    }, [post, rephrasingIndex, formattingIndex, updateContentText, showSuccessNotification]);
     
-    const handleFormatPost = async (index: number) => {
+    const handleFormatPost = useCallback(async (index: number) => {
         if (!post || rephrasingIndex !== null || formattingIndex !== null) return;
         const originalText = post.content[index].text;
         if (!originalText.trim()) {
@@ -187,7 +188,7 @@ export const ContentCreator: React.FC = () => {
             showSuccessNotification(`Post #${index + 1} formatted!`);
         } catch (e: any) { setError(`AI formatting failed: ${e.message}`); } 
         finally { setFormattingIndex(null); }
-    };
+    }, [post, rephrasingIndex, formattingIndex, updateContentText, showSuccessNotification]);
 
     const handleCheckReadiness = useCallback(async () => {
         if (!post || post.content.every(c => c.text.trim() === '')) {
@@ -234,7 +235,7 @@ export const ContentCreator: React.FC = () => {
         finally { setIsScoringPost(false); }
     }, [post]);
 
-    const handleHashtagClick = (hashtag: string) => {
+    const handleHashtagClick = useCallback((hashtag: string) => {
         if (!post) return;
         const targetIndex = activeContentIndex < post.content.length ? activeContentIndex : post.content.length - 1;
         const currentText = post.content[targetIndex].text;
@@ -247,9 +248,9 @@ export const ContentCreator: React.FC = () => {
         }
         updateContentText(targetIndex, newText);
         showSuccessNotification(`'${cleanedHashtag}' added to post #${targetIndex + 1}`);
-    };
+    }, [post, activeContentIndex, updateContentText, showSuccessNotification]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (!post) return;
         const file = e.target.files?.[0];
         if (file) {
@@ -261,28 +262,29 @@ export const ContentCreator: React.FC = () => {
             reader.readAsDataURL(file);
         }
         e.target.value = '';
-    };
+    }, [post, updatePostState]);
 
-    const addPostToThread = () => updatePostState('content', [...(post?.content || []), { text: '', image: null }]);
-    const removePostFromThread = (index: number) => {
+    const addPostToThread = useCallback(() => updatePostState('content', [...(post?.content || []), { text: '', image: null }]), [post, updatePostState]);
+    
+    const removePostFromThread = useCallback((index: number) => {
         if (!post || post.content.length <= 1) return;
         updatePostState('content', post.content.filter((_, i) => i !== index));
-    };
+    }, [post, updatePostState]);
     
-    const toggleTone = (tone: Tone) => {
+    const toggleTone = useCallback((tone: Tone) => {
         if (!post) return;
         const newTones = post.tones.includes(tone) ? post.tones.filter(t => t !== tone) : [...post.tones, tone];
         updatePostState('tones', newTones);
-    };
+    }, [post, updatePostState]);
 
-    const handleAddCustomTone = () => {
+    const handleAddCustomTone = useCallback(() => {
         if (!post || !customTone.trim() || post.tones.includes(customTone.trim())) {
             setCustomTone('');
             return;
         }
         updatePostState('tones', [...post.tones, customTone.trim()]);
         setCustomTone('');
-    };
+    }, [post, customTone, updatePostState]);
     
     const isAiBusy = isCheckingReadiness || isSuggestingHashtags || rephrasingIndex !== null || isScoringPost || formattingIndex !== null;
 
@@ -301,7 +303,7 @@ export const ContentCreator: React.FC = () => {
                         <div key={index} className={`p-2 rounded-lg transition-all duration-300 ${index === activeContentIndex ? 'bg-cyan-500/10 ring-1 ring-cyan-500' : ''}`}>
                              <div className="flex items-start gap-3 relative pl-8">
                                 {post.content.length > 1 && (<div className="absolute left-4 top-4 h-full border-l-2 border-gray-300 dark:border-gray-600"></div>)}
-                                <img src={`https://picsum.photos/seed/${index+1}/40/40`} alt="Avatar" className="w-8 h-8 rounded-full mt-2 z-10" />
+                                <img src={`https://picsum.photos/seed/${post.id}-${index}/40/40`} alt="Avatar" className="w-8 h-8 rounded-full mt-2 z-10" />
                                 <div className="w-full">
                                     <textarea value={item.text} onFocus={() => setActiveContentIndex(index)} onChange={e => updateContentText(index, e.target.value)} placeholder={index === 0 ? "What's happening?!" : "Add to your thread..."} className="w-full p-3 bg-gray-200/50 dark:bg-gray-800/60 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none transition-shadow" rows={5} />
                                     {index === activeContentIndex && (
@@ -323,7 +325,7 @@ export const ContentCreator: React.FC = () => {
                 </div>
                 <div className="xl:col-span-1 space-y-6">
                     {/* Settings Panel */}
-                    <div className="space-y-3"><h3 className="font-semibold text-base">Select Tones for AI</h3>{post.tones.length > 0 && (<div className="flex flex-wrap gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-lg">{post.tones.map(tone => (<span key={tone} className={`px-2.5 py-1 text-sm rounded-full text-white flex items-center gap-1.5 ${TONE_COLORS[tone] || 'bg-gray-500/80'}`}>{tone}<button onClick={() => updatePostState('tones', post.tones.filter(t => t !== tone))} className="bg-white/20 rounded-full p-0.5 hover:bg-white/40"><X size={12}/></button></span>))}</div>)}{!post.tones.includes(TONES[0]) && <div className="flex flex-wrap gap-2">{TONES.filter(t => !post.tones.includes(t)).map(tone => (<button key={tone} onClick={() => toggleTone(tone)} className={`px-3 py-1 text-sm rounded-full text-white transition-opacity opacity-70 hover:opacity-100 ${TONE_COLORS[tone]}`}>+ {tone}</button>))}</div>}<div className="flex items-center gap-2 pt-2"><input type="text" value={customTone} onChange={(e) => setCustomTone(e.target.value)} placeholder="Add a custom tone..." onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTone()} className="flex-grow p-2 text-sm bg-gray-200/50 dark:bg-gray-800/60 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none" /><button onClick={handleAddCustomTone} className="px-3 py-2 text-sm bg-gray-500/60 text-white rounded-lg hover:bg-gray-600/60 transition-colors">Add</button></div></div>
+                    <div className="space-y-3"><h3 className="font-semibold text-base">Select Tones for AI</h3>{post.tones.length > 0 && (<div className="flex flex-wrap gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-lg">{post.tones.map(tone => (<span key={tone} className={`px-2.5 py-1 text-sm rounded-full text-white flex items-center gap-1.5 ${TONE_COLORS[tone] || 'bg-gray-500/80'}`}>{tone}<button onClick={() => updatePostState('tones', post.tones.filter(t => t !== tone))} className="bg-white/20 rounded-full p-0.5 hover:bg-white/40"><X size={12}/></button></span>))}</div>)}{<div className="flex flex-wrap gap-2">{TONES.filter(t => !post.tones.includes(t)).map(tone => (<button key={tone} onClick={() => toggleTone(tone)} className={`px-3 py-1 text-sm rounded-full text-white transition-opacity opacity-70 hover:opacity-100 ${TONE_COLORS[tone]}`}>+ {tone}</button>))}</div>}<div className="flex items-center gap-2 pt-2"><input type="text" value={customTone} onChange={(e) => setCustomTone(e.target.value)} placeholder="Add a custom tone..." onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTone()} className="flex-grow p-2 text-sm bg-gray-200/50 dark:bg-gray-800/60 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none" /><button onClick={handleAddCustomTone} className="px-3 py-2 text-sm bg-gray-500/60 text-white rounded-lg hover:bg-gray-600/60 transition-colors">Add</button></div></div>
                     <div className="space-y-2"><h3 className="font-semibold text-base">Readiness Status</h3><div className="flex flex-wrap gap-2">{STATUSES.map(status => (<button key={status} onClick={() => updatePostState('status', status)} className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${post.status === status ? `${READINESS_CONFIG[status].color} border-opacity-100` : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'}`}>{status}</button>))}</div></div>
                     <div className="space-y-2"><h3 className="font-semibold text-base">Schedule Post (Optional)</h3><div className="flex items-center gap-2"><input type="datetime-local" value={formatDateTimeForInput(post.scheduledAt)} onChange={e => updatePostState('scheduledAt', e.target.value ? new Date(e.target.value).toISOString() : null)} className="w-full bg-gray-200/50 dark:bg-gray-800/60 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none transition-shadow" />{post.scheduledAt && (<button onClick={() => updatePostState('scheduledAt', null)} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"><X size={16} /></button>)}</div></div>
                     {/* AI Toolkit */}
@@ -337,3 +339,5 @@ export const ContentCreator: React.FC = () => {
         </GlassCard>
     );
 };
+
+export default ContentCreator;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Post, Status } from '../../types';
 import { STATUSES, READINESS_CONFIG } from '../../constants';
 import { Edit, Trash2, Clock } from 'lucide-react';
-import { GlassCard } from '../Common';
+import GlassCard from '../Common/GlassCard';
 
 const calculateTimeLeft = (scheduleDate?: string | null) => {
     if (!scheduleDate) return null;
@@ -21,12 +21,12 @@ const PostListItem: React.FC<{ post: Post; currentPostId?: string; onEdit: (id: 
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(post.scheduledAt));
 
     useEffect(() => {
-        if (!post.scheduledAt) return;
+        if (!post.scheduledAt || timeLeft?.expired) return;
         const timer = setInterval(() => {
             setTimeLeft(calculateTimeLeft(post.scheduledAt));
         }, 1000);
         return () => clearInterval(timer);
-    }, [post.scheduledAt]);
+    }, [post.scheduledAt, timeLeft?.expired]);
 
     const renderTimeInfo = () => {
         if (post.scheduledAt) {
@@ -68,7 +68,7 @@ interface ContentListProps {
     currentPostId?: string;
 }
 
-export const ContentList: React.FC<ContentListProps> = ({ posts, onEdit, onDelete, filter, setFilter, currentPostId }) => {
+const ContentList: React.FC<ContentListProps> = ({ posts, onEdit, onDelete, filter, setFilter, currentPostId }) => {
     return (
         <GlassCard className="p-6">
             <h2 className="text-xl font-bold mb-4">Your Content</h2>
@@ -89,3 +89,5 @@ export const ContentList: React.FC<ContentListProps> = ({ posts, onEdit, onDelet
         </GlassCard>
     );
 };
+
+export default ContentList;

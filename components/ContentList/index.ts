@@ -1,1 +1,1 @@
-export * from './ContentList';
+export { default } from './ContentList';

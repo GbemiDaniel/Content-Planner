@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { BrainCircuit, FileSearch, LoaderCircle, X, Sparkles } from 'lucide-react';
-import { GlassCard } from '../Common';
+import GlassCard from '../Common/GlassCard';
 import { useAppContext } from '../../contexts';
 import { analyzePostFromText } from '../../api';
 
@@ -19,7 +19,7 @@ const renderAnalysis = (markdownText: string) => {
     return <div className="prose prose-sm dark:prose-invert max-w-none space-y-2" dangerouslySetInnerHTML={{ __html: finalHtml }} />;
 };
 
-export const PostAnalyzer: React.FC = () => {
+const PostAnalyzer: React.FC = () => {
     const { setView } = useAppContext();
     const [text, setText] = useState('');
     const [isUrl, setIsUrl] = useState(false);
@@ -106,3 +106,5 @@ export const PostAnalyzer: React.FC = () => {
         </GlassCard>
     );
 };
+
+export default PostAnalyzer;

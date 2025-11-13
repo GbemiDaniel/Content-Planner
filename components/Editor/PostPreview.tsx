@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import type { Post } from '../../types';
 import { Repeat, MessageCircle, Heart, BarChart2, Copy, Check } from 'lucide-react';
-import { GlassCard } from '../Common';
+import GlassCard from '../Common/GlassCard';
 import { highlightHashtagsAndMentionsInJSX } from '../../utils';
 
 interface PostPreviewProps {
@@ -46,10 +46,10 @@ const PostPreview: React.FC<PostPreviewProps> = ({ post }) => {
             </div>
             <div className="bg-gray-100/30 dark:bg-gray-800/50 p-4 rounded-lg">
                 {post.content.map((item, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${index > 0 ? 'mt-3' : ''}`}>
+                    <div key={`${post.id}-${index}`} className={`flex items-start gap-3 ${index > 0 ? 'mt-3' : ''}`}>
                          {index > 0 && <div className="absolute left-[34px] -mt-3 h-3 border-l-2 border-gray-300 dark:border-gray-600"></div>}
                         <div className="flex-shrink-0 relative">
-                            <img src={`https://picsum.photos/seed/${index+1}/48/48`} alt="Avatar" className="w-10 h-10 rounded-full" />
+                            <img src={`https://picsum.photos/seed/${post.id}-${index}/48/48`} alt="Avatar" className="w-10 h-10 rounded-full" />
                             {index < post.content.length - 1 && <div className="absolute left-1/2 -translate-x-1/2 top-10 h-full border-l-2 border-gray-300 dark:border-gray-600"></div>}
                         </div>
                         <div className="w-full relative">
