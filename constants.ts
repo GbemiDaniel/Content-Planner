@@ -1,4 +1,3 @@
-
 import type { Status } from './types';
 
 export const X_CHAR_LIMIT = 280;
