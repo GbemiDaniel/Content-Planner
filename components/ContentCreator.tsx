@@ -309,9 +309,57 @@ const ContentCreator: React.FC<ContentCreatorProps> = ({
     const isAiBusy = isCheckingReadiness || isSuggestingHashtags || rephrasingIndex !== null || isScoringPost || formattingIndex !== null;
 
     if (!post) return null;
+    
+    const toneSelectorJsx = (
+        <div className="space-y-3">
+            <h3 className="font-semibold text-base">Select Tones for AI</h3>
+             {post.tones.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-lg">
+                    {post.tones.map(tone => (
+                        <span key={tone} className={`px-2.5 py-1 text-sm rounded-full text-white flex items-center gap-1.5 ${TONE_COLORS[tone] || 'bg-gray-500/80'}`}>
+                            {tone}
+                            <button onClick={() => removeTone(tone)} className="bg-white/20 rounded-full p-0.5 hover:bg-white/40"><X size={12}/></button>
+                        </span>
+                    ))}
+                </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+                {TONES.filter(t => !post.tones.includes(t)).map(tone => (
+                    <button key={tone} onClick={() => toggleTone(tone)} className={`px-3 py-1 text-sm rounded-full text-white transition-opacity opacity-70 hover:opacity-100 ${TONE_COLORS[tone]}`}>
+                        + {tone}
+                    </button>
+                ))}
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+                <input type="text" value={customTone} onChange={(e) => setCustomTone(e.target.value)} placeholder="Add a custom tone..." onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTone()} className="flex-grow p-2 text-sm bg-gray-200/50 dark:bg-gray-800/60 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none" />
+                <button onClick={handleAddCustomTone} className="px-3 py-2 text-sm bg-gray-500/60 text-white rounded-lg hover:bg-gray-600/60 transition-colors">Add</button>
+            </div>
+        </div>
+    );
+    
+    const statusSelectorJsx = (
+        <div className="space-y-2">
+            <h3 className="font-semibold text-base">Readiness Status</h3>
+            <div className="flex flex-wrap gap-2">
+                {STATUSES.map(status => (
+                    <button
+                        key={status}
+                        onClick={() => setStatus(status)}
+                        className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${
+                            post.status === status
+                                ? `${READINESS_CONFIG[status].color} border-opacity-100`
+                                : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'
+                        }`}
+                    >
+                        {status}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
-        <GlassCard className="p-6">
+        <GlassCard className="p-4 md:p-6">
             <div className="flex justify-between items-start mb-6">
                 <div>
                     <h2 className="text-2xl font-bold">Content Editor</h2>
@@ -323,10 +371,16 @@ const ContentCreator: React.FC<ContentCreatorProps> = ({
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-x-8 gap-y-6">
+                
+                <div className="space-y-6 xl:hidden">
+                    {toneSelectorJsx}
+                    {statusSelectorJsx}
+                </div>
+                
                 {/* Main Content Area */}
                 <div className="xl:col-span-2 space-y-4">
                     {post.content.map((item, index) => (
-                        <div key={index} className={`p-2 rounded-lg transition-all duration-300 ${index === activeContentIndex ? 'bg-cyan-500/10' : ''}`}>
+                        <div key={index} className={`p-2 rounded-lg transition-all duration-300 ${index === activeContentIndex ? 'bg-cyan-500/10 ring-1 ring-cyan-500' : ''}`}>
                             <div className="flex items-start gap-3 relative pl-8">
                                 {post.content.length > 1 && (
                                     <div className="absolute left-4 top-4 h-full border-l-2 border-gray-300 dark:border-gray-600"></div>
@@ -341,43 +395,45 @@ const ContentCreator: React.FC<ContentCreatorProps> = ({
                                         className="w-full p-3 bg-gray-200/50 dark:bg-gray-800/60 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none transition-shadow"
                                         rows={5}
                                     />
-                                    <div className="flex justify-between items-center mt-1 pr-2">
-                                        <div className="flex items-center gap-4">
-                                            <button 
-                                                onClick={() => handleRephrase(index)}
-                                                disabled={isAiBusy}
-                                                title="Rephrase with AI"
-                                                className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                {rephrasingIndex === index ? (
-                                                    <><LoaderCircle size={14} className="animate-spin" />Rephrasing...</>
-                                                ) : (
-                                                    <><Wand2 size={14} />Rephrase</>
-                                                )}
-                                            </button>
-                                            <button 
-                                                onClick={() => handleFormatPost(index)}
-                                                disabled={isAiBusy}
-                                                title="Format with AI"
-                                                className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                {formattingIndex === index ? (
-                                                    <><LoaderCircle size={14} className="animate-spin" />Formatting...</>
-                                                ) : (
-                                                    <><Sparkles size={14} />Magic Format</>
-                                                )}
-                                            </button>
+                                    {index === activeContentIndex && (
+                                        <div className="flex justify-between items-center mt-1 pr-2 animate-fade-in">
+                                            <div className="flex items-center gap-4">
+                                                <button 
+                                                    onClick={() => handleRephrase(index)}
+                                                    disabled={isAiBusy}
+                                                    title="Rephrase with AI"
+                                                    className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    {rephrasingIndex === index ? (
+                                                        <><LoaderCircle size={14} className="animate-spin" />Rephrasing...</>
+                                                    ) : (
+                                                        <><Wand2 size={14} />Rephrase</>
+                                                    )}
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleFormatPost(index)}
+                                                    disabled={isAiBusy}
+                                                    title="Format with AI"
+                                                    className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    {formattingIndex === index ? (
+                                                        <><LoaderCircle size={14} className="animate-spin" />Formatting...</>
+                                                    ) : (
+                                                        <><Sparkles size={14} />Magic Format</>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs ${item.text.length > X_CHAR_LIMIT ? 'text-red-500 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {item.text.length} / {X_CHAR_LIMIT}
+                                                </span>
+                                                <label htmlFor={`image-upload-${index}`} className="p-1 rounded-full text-gray-500 hover:bg-blue-500/20 hover:text-blue-500 transition-colors cursor-pointer">
+                                                    <ImagePlus size={18} />
+                                                </label>
+                                                <input id={`image-upload-${index}`} type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={(e) => handleImageUpload(e, index)} />
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-xs ${item.text.length > X_CHAR_LIMIT ? 'text-red-500 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                {item.text.length} / {X_CHAR_LIMIT}
-                                            </span>
-                                            <label htmlFor={`image-upload-${index}`} className="p-1 rounded-full text-gray-500 hover:bg-blue-500/20 hover:text-blue-500 transition-colors cursor-pointer">
-                                                <ImagePlus size={18} />
-                                            </label>
-                                            <input id={`image-upload-${index}`} type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={(e) => handleImageUpload(e, index)} />
-                                        </div>
-                                    </div>
+                                    )}
                                     {item.image && (
                                         <div className="mt-2 relative w-fit">
                                             <img src={item.image} alt="Preview" className="rounded-lg max-h-48 border border-white/20" />
@@ -402,24 +458,9 @@ const ContentCreator: React.FC<ContentCreatorProps> = ({
 
                 {/* Sidebar / Inspector */}
                 <div className="xl:col-span-1 space-y-6">
-                    {/* Status Selector */}
-                    <div className="space-y-2">
-                        <h3 className="font-semibold text-base">Readiness Status</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {STATUSES.map(status => (
-                                <button
-                                    key={status}
-                                    onClick={() => setStatus(status)}
-                                    className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${
-                                        post.status === status
-                                            ? `${READINESS_CONFIG[status].color} border-opacity-100`
-                                            : 'bg-gray-200/50 dark:bg-gray-700/50 border-transparent hover:border-gray-400/50'
-                                    }`}
-                                >
-                                    {status}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="hidden xl:block xl:space-y-6">
+                        {toneSelectorJsx}
+                        {statusSelectorJsx}
                     </div>
                      {/* Schedule Post */}
                     <div className="space-y-2">
@@ -439,32 +480,6 @@ const ContentCreator: React.FC<ContentCreatorProps> = ({
                         </div>
                     </div>
 
-                    {/* Tone Selector */}
-                    <div className="space-y-3">
-                        <h3 className="font-semibold text-base">Select Tones for AI</h3>
-                         {post.tones.length > 0 && (
-                            <div className="flex flex-wrap gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-lg">
-                                {post.tones.map(tone => (
-                                    <span key={tone} className={`px-2.5 py-1 text-sm rounded-full text-white flex items-center gap-1.5 ${TONE_COLORS[tone] || 'bg-gray-500/80'}`}>
-                                        {tone}
-                                        <button onClick={() => removeTone(tone)} className="bg-white/20 rounded-full p-0.5 hover:bg-white/40"><X size={12}/></button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                            {TONES.filter(t => !post.tones.includes(t)).map(tone => (
-                                <button key={tone} onClick={() => toggleTone(tone)} className={`px-3 py-1 text-sm rounded-full text-white transition-opacity opacity-70 hover:opacity-100 ${TONE_COLORS[tone]}`}>
-                                    + {tone}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-2 pt-2">
-                            <input type="text" value={customTone} onChange={(e) => setCustomTone(e.target.value)} placeholder="Add a custom tone..." onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTone()} className="flex-grow p-2 text-sm bg-gray-200/50 dark:bg-gray-800/60 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none" />
-                            <button onClick={handleAddCustomTone} className="px-3 py-2 text-sm bg-gray-500/60 text-white rounded-lg hover:bg-gray-600/60 transition-colors">Add</button>
-                        </div>
-                    </div>
-                    
                     {/* AI Toolkit */}
                     <div className="space-y-3 pt-4 border-t border-white/10 dark:border-white/5">
                         <h3 className="font-semibold text-base">AI Toolkit</h3>
